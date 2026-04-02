@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ZDT Billing Software</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body style="font-family: Arial; text-align: center; margin-top: 100px;">
+
+  <h1>ZDT Billing Software</h1>
+  <button onclick="pay()" style="padding: 15px 30px; font-size: 18px;">
+    Buy Now ₹499
+  </button>
+
+  <p id="status"></p>
+
+  <script>
+    async function pay() {
+      try {
+        document.getElementById("status").innerText = "Processing...";
+
+        // 🔹 Get Razorpay key from backend
+        const keyRes = await fetch("http://localhost:5000/get-key");
+        const keyData = await keyRes.json();
+
+        console.log("Key:", keyData);
+
+        // 🔹 Create order
+        const orderRes = await fetch("http://localhost:5000/create-order", {
+          method: "POST"
+        });
+
+        const order = await orderRes.json();
+
+        console.log("Order:", order);
+
+        const options = {
+          key: keyData.key,
+          amount: order.amount,
+          currency: "INR",
+          order_id: order.id,
+
+          name: "ZDT Billing Software",
+          description: "Purchase License",
+
+          prefill: {
+            name: "Test User",
+            email: "test@example.com",
+            contact: "9876543210"
+          },
+
+          theme: {
+            color: "#3399cc"
+          },
+
+          handler: async function (response) {
+
+            console.log("Payment Response:", response);
+
+            const verifyRes = await fetch("http://localhost:5000/verify-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                razorpay_order_id: order.id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            const data = await verifyRes.json();
+
+            console.log("Verify:", data);
+
+            if (data.success) {
+              localStorage.setItem("license", data.license);
+
+              // 🔹 For now dummy download link
+              localStorage.setItem("download", "#");
+
+              window.location.href = "success.html";
+            } else {
+              alert("Payment verification failed");
+            }
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (err) {
+        console.error("ERROR:", err);
+        document.getElementById("status").innerText = "Error occurred";
+        alert("Something went wrong. Check console (F12)");
+      }
+    }
+  </script>
+
+</body>
+</html>
