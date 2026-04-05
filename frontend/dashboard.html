@@ -9,7 +9,7 @@
 
 <h2>Dashboard</h2>
 
-<p id="user"></p>
+<p id="user">Loading...</p>
 
 <button onclick="download()">Download Software</button>
 <button onclick="buy()">Buy License</button>
@@ -23,49 +23,51 @@ const { createClient } = supabase;
 
 const supabaseClient = createClient(
   "https://sdmarwodashukreugeft.supabase.co",
-  "YOUR_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbWFyd29kYXNodWtyZXVnZWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MzA4MjUsImV4cCI6MjA5MDUwNjgyNX0.8Qvv4vUOY8iUkUWxpnNtxcwdkW4dKLENmLt77eYVLyg"
 );
 
-// 🔥 PUT YOUR BACKEND URL
-const BACKEND_URL = "https://your-backend.onrender.com";
+// 🔥 CHANGE THIS AFTER DEPLOY
+const BACKEND_URL = "https://your-app.onrender.com";
 
-// 🔥 PUT YOUR DOWNLOAD LINK
+// 🔥 PUT YOUR DOWNLOAD LINK HERE
 const DOWNLOAD_LINK = "https://github.com/your-username/zdt-billing/releases/download/v1.0/ZDT_Billing_Setup.exe";
 
 
 // ================= INIT =================
 async function init() {
-  // ✅ Try normal session
-  let { data: { session } } = await supabaseClient.auth.getSession();
 
-  // ✅ If no session → get from magic link URL
-  if (!session) {
-    const { data, error } = await supabaseClient.auth.exchangeCodeForSession(window.location.href);
+  // ✅ Step 1: Handle magic link session (IMPORTANT)
+  const { data, error } = await supabaseClient.auth.exchangeCodeForSession(window.location.href);
 
-    if (error) {
-      console.error("Session error:", error);
-      window.location.href = "index.html";
-      return;
-    }
-
-    session = data.session;
+  if (error && !error.message.includes("No code")) {
+    console.error("Exchange error:", error);
   }
 
-  // ❌ Still no session → redirect
-  if (!session) {
-    window.location.href = "index.html";
-    return;
-  }
+  // ✅ Step 2: Get current session
+  const { data: sessionData } = await supabaseClient.auth.getSession();
 
-  // ✅ Show user email
+  if (sessionData.session) {
+    showUser(sessionData.session);
+  } else {
+    // ✅ Step 3: Wait for session (fix for redirect issue)
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        showUser(session);
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+  }
+}
+
+
+// ================= SHOW USER =================
+function showUser(session) {
   document.getElementById("user").innerText =
     "Logged in: " + session.user.email;
 
-  // ✅ Auto load licenses
-  loadLicenses();
+  loadLicenses(); // auto load
 }
-
-init();
 
 
 // ================= DOWNLOAD =================
@@ -108,6 +110,7 @@ async function buy() {
       const result = await verifyRes.json();
 
       alert("License Generated: " + result.license);
+
       loadLicenses(); // refresh
     }
   };
@@ -132,7 +135,7 @@ async function loadLicenses() {
 
   let html = "<h3>Your Licenses:</h3>";
 
-  if (data.licenses.length === 0) {
+  if (!data.licenses || data.licenses.length === 0) {
     html += "<p>No licenses found</p>";
   } else {
     data.licenses.forEach(l => {
@@ -154,6 +157,11 @@ async function logout() {
   await supabaseClient.auth.signOut();
   window.location.href = "index.html";
 }
+
+
+// ================= START =================
+init();
+
 </script>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
