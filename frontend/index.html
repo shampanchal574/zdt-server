@@ -30,9 +30,12 @@ async function login() {
   await supabaseClient.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin + "/dashboard.html"
+      emailRedirectTo: "https://zdt-billing-website.vercel.app/dashboard.html"
     }
   });
+
+  document.getElementById("status").innerText = "Check your email";
+}
 
   document.getElementById("status").innerText = "Check your email";
 }

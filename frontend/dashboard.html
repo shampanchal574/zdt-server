@@ -23,35 +23,58 @@ const { createClient } = supabase;
 
 const supabaseClient = createClient(
   "https://sdmarwodashukreugeft.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbWFyd29kYXNodWtyZXVnZWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MzA4MjUsImV4cCI6MjA5MDUwNjgyNX0.8Qvv4vUOY8iUkUWxpnNtxcwdkW4dKLENmLt77eYVLyg"
+  "YOUR_ANON_KEY"
 );
 
-// 🔥 CHANGE THIS AFTER DEPLOY
-const BACKEND_URL = "https://your-app.onrender.com";
+// 🔥 PUT YOUR BACKEND URL
+const BACKEND_URL = "https://your-backend.onrender.com";
 
-// 🔥 PUT YOUR DOWNLOAD LINK HERE
+// 🔥 PUT YOUR DOWNLOAD LINK
 const DOWNLOAD_LINK = "https://github.com/your-username/zdt-billing/releases/download/v1.0/ZDT_Billing_Setup.exe";
-// INIT
-async function init() {
-  const { data } = await supabaseClient.auth.getSession();
 
-  if (!data.session) {
+
+// ================= INIT =================
+async function init() {
+  // ✅ Try normal session
+  let { data: { session } } = await supabaseClient.auth.getSession();
+
+  // ✅ If no session → get from magic link URL
+  if (!session) {
+    const { data, error } = await supabaseClient.auth.exchangeCodeForSession(window.location.href);
+
+    if (error) {
+      console.error("Session error:", error);
+      window.location.href = "index.html";
+      return;
+    }
+
+    session = data.session;
+  }
+
+  // ❌ Still no session → redirect
+  if (!session) {
     window.location.href = "index.html";
     return;
   }
 
+  // ✅ Show user email
   document.getElementById("user").innerText =
-    "Logged in: " + data.session.user.email;
+    "Logged in: " + session.user.email;
+
+  // ✅ Auto load licenses
+  loadLicenses();
 }
 
 init();
 
-// DOWNLOAD
+
+// ================= DOWNLOAD =================
 function download() {
   window.location.href = DOWNLOAD_LINK;
 }
 
-// BUY LICENSE
+
+// ================= BUY LICENSE =================
 async function buy() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData.session.access_token;
@@ -84,7 +107,8 @@ async function buy() {
 
       const result = await verifyRes.json();
 
-      alert("License: " + result.license);
+      alert("License Generated: " + result.license);
+      loadLicenses(); // refresh
     }
   };
 
@@ -92,7 +116,8 @@ async function buy() {
   rzp.open();
 }
 
-// LOAD LICENSES
+
+// ================= LOAD LICENSES =================
 async function loadLicenses() {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData.session.access_token;
@@ -107,14 +132,24 @@ async function loadLicenses() {
 
   let html = "<h3>Your Licenses:</h3>";
 
-  data.licenses.forEach(l => {
-    html += `<p>${l.license_key}</p>`;
-  });
+  if (data.licenses.length === 0) {
+    html += "<p>No licenses found</p>";
+  } else {
+    data.licenses.forEach(l => {
+      html += `
+        <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+          <b>${l.license_key}</b><br>
+          Status: ${l.active ? "Activated" : "Not Activated"}
+        </div>
+      `;
+    });
+  }
 
   document.getElementById("licenses").innerHTML = html;
 }
 
-// LOGOUT
+
+// ================= LOGOUT =================
 async function logout() {
   await supabaseClient.auth.signOut();
   window.location.href = "index.html";
