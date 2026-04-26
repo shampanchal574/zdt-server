@@ -1,33 +1,68 @@
-<div style="text-align:center; font-family:sans-serif;">
-  <h1>🎉 Payment Successful</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Successful — ZDT Billing</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Inter, system-ui, sans-serif;
+      background: radial-gradient(circle at top, #e0f2fe 0%, #1e3a8a 45%, #020617 100%);
+      color: #111827;
+    }
+    .card {
+      width: min(520px, calc(100vw - 32px));
+      padding: 32px;
+      border-radius: 24px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+      background: rgba(255,255,255,0.92);
+      text-align: center;
+    }
+    h1 { margin-bottom: 16px; font-size: clamp(2rem, 3.5vw, 2.75rem); }
+    p { margin: 0.75rem 0; color: #475569; }
+    #licenseKey { margin: 16px 0; padding: 16px 20px; border-radius: 16px; background: #f8fafc; color: #0f172a; font-family: 'Courier New', monospace; letter-spacing: 0.08em; }
+    button { cursor: pointer; border: none; border-radius: 999px; padding: 14px 24px; font-size: 1rem; font-weight: 600; }
+    .btn-copy { background: #2563eb; color: white; margin-top: 16px; }
+    .btn-download { background: #10b981; color: white; margin-top: 18px; }
+    .btn-download:hover, .btn-copy:hover { opacity: 0.94; }
+    .caption { margin-top: 20px; color: #64748b; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎉 Payment Successful</h1>
+    <p>Your License Key:</p>
+    <div id="licenseKey">Loading...</div>
+    <button class="btn-copy" type="button" onclick="copyKey()">Copy License</button>
+    <div style="margin-top:18px;">
+      <a href="/download">
+        <button class="btn-download" type="button">Download Software</button>
+      </a>
+    </div>
+    <p class="caption">Save your license key. It will be required to activate the software.</p>
+  </div>
 
-  <p>Your License Key:</p>
+  <script>
+    // Get license key from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const licenseKey = urlParams.get('license') || 'ZDT-847EFF36';
+    document.getElementById('licenseKey').textContent = licenseKey;
 
-  <h2 id="licenseKey" style="color:#000;">
-    ZDT-847EFF36
-  </h2>
-
-  <button onclick="copyKey()" style="margin:10px; padding:10px;">
-    Copy License
-  </button>
-
-  <br><br>
-
-  <a href="https://your-server.com/download/setup.exe">
-    <button style="background:green; color:white; padding:12px 20px; border:none;">
-      Download Software
-    </button>
-  </a>
-
-  <p style="margin-top:20px; color:gray;">
-    Save your license key. It will be required to activate the software.
-  </p>
-</div>
-
-<script>
-function copyKey() {
-  const key = document.getElementById("licenseKey").innerText;
-  navigator.clipboard.writeText(key);
-  alert("License copied!");
-}
-</script>
+    function copyKey() {
+      const key = document.getElementById('licenseKey').textContent.trim();
+      if (!navigator.clipboard) {
+        alert('Clipboard is not available in this browser.');
+        return;
+      }
+      navigator.clipboard.writeText(key)
+        .then(() => alert('License copied!'))
+        .catch(() => alert('Unable to copy license automatically. Please copy it manually.'));
+    }
+  </script>
+</body>
+</html>

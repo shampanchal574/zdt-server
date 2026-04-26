@@ -1,11 +1,14 @@
 require("dotenv").config();
 
+console.log('Server starting...');
+
 const express = require("express");
 const Razorpay = require("razorpay");
 const cors = require("cors");
 const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { v4: uuidv4 } = require("uuid");
+const path = require("path");
 
 const app = express();
 
@@ -21,6 +24,8 @@ process.on("unhandledRejection", (err) => {
 // ================= MIDDLEWARE =================
 app.use(cors({ origin: "*" }));
 app.use(express.json());
+
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ================= INIT =================
 const razorpay = new Razorpay({
@@ -62,9 +67,15 @@ app.get("/get-key", (req, res) => {
 
 // ================= CREATE ORDER =================
 app.post("/create-order", async (req, res) => {
+  console.log("Create order endpoint called");
   try {
+    const { amount } = req.body;
+    console.log("Received amount:", amount);
+    const orderAmount = amount || 99900; // Default to ₹999 if no amount provided
+    console.log("Using order amount:", orderAmount);
+
     const order = await razorpay.orders.create({
-      amount: 49900,
+      amount: orderAmount,
       currency: "INR",
       receipt: "receipt_" + Date.now(),
     });
@@ -84,15 +95,6 @@ app.post("/verify-payment", async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
     } = req.body;
-
-    // 🔐 Verify User
-    const email = await getUserEmail(req);
-
-    if (!email) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    console.log("👤 User:", email);
 
     // 🔐 Validate payment
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -114,11 +116,11 @@ app.post("/verify-payment", async (req, res) => {
     // 🔑 Generate License
     const license = "ZDT-" + uuidv4().slice(0, 8).toUpperCase();
 
-    // 💾 Store License
+    // 💾 Store License (without email for anonymous checkout)
     const { error } = await supabase.from("licenses").insert([
       {
         license_key: license,
-        email: email,
+        email: null, // Anonymous purchase
         active: true,
         device_id: null,
         created_at: new Date(),
@@ -218,6 +220,14 @@ app.post("/activate-license", async (req, res) => {
     console.error("💥 Activation Error:", err);
     res.status(500).json({ success: false });
   }
+});
+
+// ================= DOWNLOAD =================
+app.get("/download", (req, res) => {
+  console.log('Download route hit!');
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', 'attachment; filename="zdt-setup.exe"');
+  res.send('Placeholder for zdt-setup.exe. Please contact support for the actual download.');
 });
 
 // ================= START =================

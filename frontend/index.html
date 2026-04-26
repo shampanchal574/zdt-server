@@ -1,42 +1,285 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>ZDT Billing</title>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
+<title>ZDT Billing SaaS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e3a8a 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── Glowing Cursor ── */
+  #cursor-glow {
+    position: fixed;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #ffffff 0%, #60a5fa 40%, rgba(96,165,250,0) 100%);
+    box-shadow:
+      0 0 8px 3px #60a5fa,
+      0 0 20px 6px rgba(96,165,250,0.6),
+      0 0 40px 12px rgba(59,130,246,0.3);
+    transition: transform 0.05s linear;
+  }
+
+  /* ── Cards ── */
+  .card {
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1.5rem;
+  }
+
+  /* ── Butterfly ── */
+  .butterfly {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    will-change: transform;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  /* Wing flap – speed varied per butterfly via --spd custom prop */
+  @keyframes flap {
+    0%   { transform: scaleX(1);   }
+    50%  { transform: scaleX(0.15); }
+    100% { transform: scaleX(1);   }
+  }
+  .wing-left  { animation: flap var(--spd, 0.38s) infinite ease-in-out; transform-origin: right center; }
+  .wing-right { animation: flap var(--spd, 0.38s) infinite ease-in-out reverse; transform-origin: left center; }
+
+  /* Hero */
+  h1 { font-family: 'Syne', sans-serif; line-height: 1.1; }
+
+  /* Subtle star dots */
+  .stars {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 80% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.2) 0%, transparent 100%);
+  }
+</style>
 </head>
+<body class="text-white">
 
-<body style="text-align:center; margin-top:100px; font-family:Arial;">
+<!-- Stars -->
+<div class="stars"></div>
 
-<h2>ZDT Billing Software</h2>
+<!-- Glowing Cursor -->
+<div id="cursor-glow"></div>
 
-<input type="email" id="email" placeholder="Enter email" />
-<br><br>
+<!-- HERO -->
+<section class="px-12 py-24 relative z-10">
+  <p class="text-blue-400 text-sm font-medium tracking-widest uppercase mb-4 opacity-80">Zero Downtime Billing</p>
+  <h1 class="text-6xl font-extrabold mb-6 leading-tight">
+    Run Your Shop Billing <br>
+    <span class="text-blue-400">Like a Pro</span>
+  </h1>
+  <p class="text-slate-400 text-lg max-w-lg leading-relaxed">
+    Automated invoicing, real-time analytics, and zero-hassle reconciliation — all in one place.
+  </p>
+  <div class="flex gap-4 mt-10">
+    <button class="px-8 py-3 bg-blue-500 hover:bg-blue-400 rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-blue-500/30">
+      Get Started Free
+    </button>
+    <button class="px-8 py-3 card hover:bg-white/10 rounded-xl font-semibold transition-all duration-200">
+      Watch Demo
+    </button>
+  </div>
+</section>
 
-<button onclick="login()">Login</button>
-
-<p id="status"></p>
-
+<!-- BUTTERFLIES SCRIPT -->
 <script>
-const { createClient } = supabase;
+/* ─────────────────────────────────────────────
+   CURSOR – smooth glowing ball
+───────────────────────────────────────────── */
+const glow = document.getElementById('cursor-glow');
+let cx = window.innerWidth/2, cy = window.innerHeight/2;
+let tx = cx, ty = cy;
 
-const supabaseClient = createClient(
-  "https://sdmarwodashukreugeft.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbWFyd29kYXNodWtyZXVnZWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MzA4MjUsImV4cCI6MjA5MDUwNjgyNX0.8Qvv4vUOY8iUkUWxpnNtxcwdkW4dKLENmLt77eYVLyg"
-);
+document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
 
-async function login() {
-  const email = document.getElementById("email").value;
+(function moveCursor() {
+  cx += (tx - cx) * 0.12;
+  cy += (ty - cy) * 0.12;
+  glow.style.left = cx + 'px';
+  glow.style.top  = cy + 'px';
+  requestAnimationFrame(moveCursor);
+})();
 
-  await supabaseClient.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: "https://zdt-billing-website.vercel.app/dashboard.html"
+/* ─────────────────────────────────────────────
+   BUTTERFLY DEFINITIONS
+   5 distinct wing shapes × many colour combos
+───────────────────────────────────────────── */
+
+// Each shape = [leftWingPath, rightWingPath]
+const SHAPES = [
+  // 1 – Classic monarch
+  [
+    'M50 52 C28 15, 2 22, 18 50 C2 76, 28 88, 50 52',
+    'M50 52 C72 15, 98 22, 82 50 C98 76, 72 88, 50 52'
+  ],
+  // 2 – Swallowtail (pointed lower lobe)
+  [
+    'M50 50 C30 10, 0  20, 15 46 C0 68, 22 96, 50 50',
+    'M50 50 C70 10,100 20, 85 46 C100 68, 78 96, 50 50'
+  ],
+  // 3 – Broad rounded
+  [
+    'M50 50 C20 5, -10 30, 20 52 C-5 75, 22 95, 50 50',
+    'M50 50 C80 5,110 30, 80 52 C105 75, 78 95, 50 50'
+  ],
+  // 4 – Slim atlas moth
+  [
+    'M50 52 C35 25, 8 30, 22 50 C8 70, 35 80, 50 52',
+    'M50 52 C65 25, 92 30, 78 50 C92 70, 65 80, 50 52'
+  ],
+  // 5 – Fan / peacock
+  [
+    'M50 50 C25 8, -5 15, 10 45 C-5 72, 20 95, 50 50',
+    'M50 50 C75 8,105 15, 90 45 C105 72, 80 95, 50 50'
+  ]
+];
+
+// Rich multicolour palette pairs [primary, secondary]
+const PALETTES = [
+  ['#f472b6','#ec4899'],   // hot pink
+  ['#60a5fa','#3b82f6'],   // sky blue
+  ['#a78bfa','#7c3aed'],   // violet
+  ['#34d399','#10b981'],   // emerald
+  ['#fbbf24','#f59e0b'],   // amber
+  ['#22d3ee','#06b6d4'],   // cyan
+  ['#f87171','#ef4444'],   // red
+  ['#c084fc','#a855f7'],   // purple
+  ['#86efac','#4ade80'],   // lime
+  ['#fb923c','#f97316'],   // orange
+  ['#e879f9','#d946ef'],   // fuchsia
+  ['#38bdf8','#0ea5e9'],   // light blue
+];
+
+/* ─────────────────────────────────────────────
+   CREATE BUTTERFLIES
+───────────────────────────────────────────── */
+const TOTAL = 18;
+const butterflies = [];
+
+for (let i = 0; i < TOTAL; i++) {
+  const shape   = SHAPES[i % SHAPES.length];
+  const palette = PALETTES[i % PALETTES.length];
+  const size    = 20 + Math.random() * 40;          // 20–60 px
+  const speed   = (0.25 + Math.random() * 0.35).toFixed(2) + 's'; // wing flap speed
+  const opacity = 0.55 + Math.random() * 0.45;
+
+  const el = document.createElement('div');
+  el.className = 'butterfly';
+  el.style.cssText = `width:${size}px; height:${size}px; opacity:${opacity}; --spd:${speed};`;
+  el.innerHTML = `
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+      <defs>
+        <radialGradient id="lg${i}a" cx="40%" cy="40%" r="60%">
+          <stop offset="0%"   stop-color="${palette[0]}" stop-opacity="1"/>
+          <stop offset="100%" stop-color="${palette[1]}" stop-opacity="0.6"/>
+        </radialGradient>
+        <radialGradient id="lg${i}b" cx="60%" cy="40%" r="60%">
+          <stop offset="0%"   stop-color="${palette[1]}" stop-opacity="1"/>
+          <stop offset="100%" stop-color="${palette[0]}" stop-opacity="0.6"/>
+        </radialGradient>
+      </defs>
+      <!-- Left wing -->
+      <path class="wing-left"  d="${shape[0]}" fill="url(#lg${i}a)" stroke="${palette[0]}" stroke-width="0.5" stroke-opacity="0.4"/>
+      <!-- Right wing -->
+      <path class="wing-right" d="${shape[1]}" fill="url(#lg${i}b)" stroke="${palette[1]}" stroke-width="0.5" stroke-opacity="0.4"/>
+      <!-- Body -->
+      <ellipse cx="50" cy="52" rx="2" ry="8" fill="rgba(255,255,255,0.7)"/>
+      <!-- Antennae -->
+      <line x1="50" y1="44" x2="42" y2="30" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+      <circle cx="42" cy="29" r="1.5" fill="${palette[0]}"/>
+      <line x1="50" y1="44" x2="58" y2="30" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+      <circle cx="58" cy="29" r="1.5" fill="${palette[1]}"/>
+    </svg>`;
+
+  document.body.appendChild(el);
+
+  butterflies.push({
+    el,
+    x:   Math.random() * window.innerWidth,
+    y:   Math.random() * window.innerHeight,
+    vx:  (Math.random() - 0.5) * 1.4,
+    vy:  (Math.random() - 0.5) * 1.4,
+    baseSpeed: 0.8 + Math.random() * 0.8,
+    angle: Math.random() * Math.PI * 2,
+    turnRate: (Math.random() - 0.5) * 0.06,
+    attracted: false,
+  });
+}
+
+/* ─────────────────────────────────────────────
+   ANIMATION LOOP
+───────────────────────────────────────────── */
+const ATTRACTION_RADIUS = 160;   // px – only react inside this radius
+const ATTRACTION_FORCE  = 0.025; // how strongly pulled toward cursor
+
+function loop() {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  butterflies.forEach(b => {
+    const dx   = cx - b.x;
+    const dy   = cy - b.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < ATTRACTION_RADIUS) {
+      /* ── Inside glow radius: drift gently toward cursor ── */
+      b.vx += (dx / dist) * ATTRACTION_FORCE * (1 - dist / ATTRACTION_RADIUS);
+      b.vy += (dy / dist) * ATTRACTION_FORCE * (1 - dist / ATTRACTION_RADIUS);
+      b.attracted = true;
+    } else {
+      /* ── Outside: free wandering with smooth curved flight ── */
+      b.attracted = false;
+      b.angle += b.turnRate + (Math.random() - 0.5) * 0.04;
+      const targetVx = Math.cos(b.angle) * b.baseSpeed;
+      const targetVy = Math.sin(b.angle) * b.baseSpeed;
+      b.vx += (targetVx - b.vx) * 0.04;
+      b.vy += (targetVy - b.vy) * 0.04;
     }
+
+    // Clamp max speed
+    const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+    const maxSpd = b.attracted ? 2.5 : b.baseSpeed * 1.2;
+    if (spd > maxSpd) { b.vx *= maxSpd / spd; b.vy *= maxSpd / spd; }
+
+    b.x += b.vx;
+    b.y += b.vy;
+
+    // Soft wrap with a margin so they glide off-screen naturally
+    const margin = 50;
+    if (b.x > W + margin) b.x = -margin;
+    if (b.x < -margin)    b.x =  W + margin;
+    if (b.y > H + margin) b.y = -margin;
+    if (b.y < -margin)    b.y =  H + margin;
+
+    // Rotate to face direction of travel
+    const rot = Math.atan2(b.vy, b.vx) * (180 / Math.PI);
+    b.el.style.transform = `translate(${b.x}px, ${b.y}px) rotate(${rot}deg)`;
   });
 
-  document.getElementById("status").innerText = "Check your email";
+  requestAnimationFrame(loop);
 }
-</script>
 
+loop();
+</script>
 </body>
 </html>
